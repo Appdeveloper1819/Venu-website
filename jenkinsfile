@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main', credentialsId: 'github-token', url: 'https://github.com/sonuvish-lab/venupilot-website.git'
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+        stage('Build React App') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh '''
+                    rm -rf /var/www/web/build
+                    cp -r build /var/www/web/
+                    pm2 stop web || true
+                    pm2 delete web || true
+                    pm2 serve /var/www/web/build 3001 --name web --spa
+                '''
+            }
+        }
+    }
+}
